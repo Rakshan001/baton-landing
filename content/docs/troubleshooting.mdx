@@ -1,0 +1,75 @@
+---
+title: Troubleshooting
+description: Common setup snags and how to fix them.
+icon: LifeBuoy
+---
+
+## `npm i -g baton` fails
+
+The npm package isn't published yet. Install from source — see the
+[Quickstart](/docs/quickstart#install-from-source).
+
+## `graphify` not found
+
+The knowledge graph needs the `graphify` CLI. Install it and make sure it's on PATH:
+
+```bash
+uv tool install graphifyy
+graphify --version
+```
+
+If `baton kb init` still can't find it, the daemon's PATH may differ from your shell's — start
+the daemon from the terminal where `graphify` works.
+
+## Agents show "not installed" but I have them
+
+Install detection uses the **daemon's** PATH. If you launched `baton serve` from an environment
+with a minimal PATH (e.g. an IDE helper), agent CLIs like `cursor-agent`, `codex`, or `gemini`
+may not be visible. Start `baton serve` from a normal terminal where those commands run.
+
+## Port 7077 already in use
+
+Another daemon (or process) holds the port. Use a different one:
+
+```bash
+baton serve --write -p 7078
+```
+
+Register multiple repos by running one daemon per repo on different ports and switching between
+them in the dashboard's top-left project switcher.
+
+## Dashboard actions are greyed out / read-only
+
+The daemon is running without write access. Restart it with `--write`:
+
+```bash
+baton serve --write
+```
+
+A read-only daemon always forces the dashboard into read-only mode (merge/remove disabled).
+
+## The dashboard shows fake projects and tokens
+
+You're on **demo mode** — the Vite dev server at **http://localhost:5173** defaults to a
+showcase fixture dataset. For your real repo, open the daemon-served dashboard at
+**http://localhost:7077** (`baton serve --write`). See [Concepts](/docs/concepts#daemon--dashboard).
+
+## Interactive terminals don't open
+
+Interactive agent terminals need **tmux**:
+
+```bash
+brew install tmux      # macOS
+sudo apt install tmux  # Debian/Ubuntu
+```
+
+Headless runs (`baton start`) work without tmux.
+
+## Leftover worktrees or branches
+
+Run the cleanup tools — see [Keep your repo clean](/docs/keep-your-repo-clean#reclaim-junk-you-already-have):
+
+```bash
+baton doctor
+baton clean --fix
+```

@@ -1,0 +1,55 @@
+---
+title: Project Memory
+description: Shared, evidence-anchored facts so agents stop re-discovering the same things.
+icon: Brain
+---
+
+Project memory is a shared store of facts agents learn while working — decisions, gotchas,
+conventions, references — so the next session doesn't re-discover them by re-reading the repo.
+
+Its defining feature is **anti-hallucination**: every fact is anchored to evidence, and stale
+facts are withheld from agents automatically.
+
+## How it works
+
+Each fact is one markdown file under `.baton/memory/facts/`, written atomically. Every fact
+records:
+
+- the **commit** it was learned at, and
+- a **content hash of each file** it describes.
+
+On every read, Baton re-checks those anchors. If an anchored file changed, the fact is served
+as **stale** — with the reason — and **withheld** from agents. A stale "fact" presented as
+truth is exactly how models hallucinate, so Baton refuses to serve one.
+
+```bash
+baton memory list
+# ● fresh   ◐ aging (commits behind)   ○ stale (file changed — withheld)
+```
+
+## Agents read and write it
+
+Through the **baton** MCP server:
+
+- `recall_memory("auth")` — keyword-ranked, stale-filtered facts relevant to a topic. Agents are told to recall **before** exploring.
+- `save_memory("…", files: ["src/auth.ts"])` — record a fact (1–3 sentences) with the files it's about, **after** learning something non-obvious.
+
+## From the CLI
+
+```bash
+baton memory add "Auth tokens are refreshed in middleware, not the route handler." \
+  --type convention --files src/auth/middleware.ts
+baton memory gc      # drop stale facts
+```
+
+## Guardrails
+
+- **Secrets are refused.** Anything that looks like an API key, token, or JWT is rejected — memory files are read by every agent.
+- **Updates supersede, they don't pile up.** A new fact that's genuinely the same knowledge replaces the old one (matched by opening words *and* body similarity, so two distinct facts that merely start alike are both kept).
+- **Caps:** ~1.2k characters per fact, 500 facts total — store the insight, not the artifact.
+
+<Callout type="info">
+  Memory lives in `.baton/`, which is gitignored — it's shared across your machine's agents and
+  worktrees, not pushed to teammates. To share it, use the knowledge-base
+  [export/import](/docs/cli-reference#baton-kb-export--import--share).
+</Callout>

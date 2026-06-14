@@ -1,0 +1,14 @@
+{
+  "title": "Baton Docs",
+  "pages": [
+    "index",
+    "quickstart",
+    "concepts",
+    "cli-reference",
+    "---Guides---",
+    "guides",
+    "---Operations---",
+    "keep-your-repo-clean",
+    "troubleshooting"
+  ]
+}

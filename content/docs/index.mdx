@@ -1,0 +1,48 @@
+---
+title: Introduction
+description: Baton coordinates multiple AI coding agents on one repo — isolated git worktrees, a live dashboard, shared memory, and one-file handoff.
+icon: Album
+---
+
+Baton is a local-first coordination hub for the AI coding agents you already use —
+**Claude Code, Cursor, Codex, Gemini, Aider, OpenCode** — working on **one repo at the
+same time** without stepping on each other.
+
+Each task runs in its own isolated **git worktree**. A tiny daemon + dashboard give you a
+live view of who is editing what, warns you when two agents touch the same file, and lets
+you hand a piece of work from one agent to another with a single command.
+
+<Callout title="The one-line pitch">
+  **Plan on your expensive agent. Pass the baton to your cheap one.** Baton emits a curated,
+  cheap-to-execute brief — not a raw history dump — so work continues instead of being lost.
+</Callout>
+
+## Why Baton
+
+Developers run two or three AI CLIs to save money and quota. The problem is coordination:
+
+- Two agents edit the same file and silently clobber each other.
+- You lose context when a session ends or a model hits its limit.
+- The expensive model re-explores the codebase every session because nothing is remembered.
+
+Baton fixes this with four ideas, all local and all under your control:
+
+- **Worktree-per-task** — every task is an isolated branch + working directory. No checkout juggling, no in-session conflicts.
+- **Live coordination** — a daemon streams edit-signals over SSE; the dashboard shows live agents, conflicts, and progress.
+- **Shared, evidence-checked memory** — agents save and recall facts; stale facts (whose files changed) are withheld so models don't hallucinate.
+- **One-file handoff** — `baton pass` packages a session into a `HANDOFF.md` brief with a token/cost estimate; another agent runs `baton take` and continues.
+
+## What Baton is not
+
+- It is **not** a hosted service. The daemon binds to `127.0.0.1` only; nothing leaves your machine.
+- It is **not** a model or an agent. It coordinates the agents you already have on your PATH.
+- It does **not** lock you in. Worktrees are standard `git worktree`; remove Baton and your repo is untouched.
+
+## Next steps
+
+<Cards>
+  <Card title="Quickstart" href="/docs/quickstart" description="Install, build, and run the daemon + dashboard in a few minutes." />
+  <Card title="Core concepts" href="/docs/concepts" description="Worktrees, the daemon + dashboard, and the realtime model." />
+  <Card title="CLI reference" href="/docs/cli-reference" description="Every command and flag." />
+  <Card title="Keep your repo clean" href="/docs/keep-your-repo-clean" description="What to gitignore so agent worktrees never get committed." />
+</Cards>

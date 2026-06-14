@@ -1,0 +1,186 @@
+---
+title: CLI Reference
+description: Every Baton command and its options.
+icon: SquareTerminal
+---
+
+Run `baton --help` for the live list, or `baton <command> --help` for any command.
+
+## Tasks & worktrees
+
+### `baton new "<task>"`
+Scaffold a branch + isolated worktree for a task and record it.
+
+```bash
+baton new "fix the login crash"
+```
+
+### `baton ls`
+List tasks with git status, ahead/behind counts, and age.
+
+### `baton status`
+Central live board: which agent is on each task, status, ahead/behind, likely conflicts.
+
+| Flag | Description |
+| --- | --- |
+| `-w, --watch` | Auto-refresh every 2s |
+
+### `baton merge <slug>`
+Merge a task's branch into the current branch (squash + archive by default).
+
+| Flag | Description |
+| --- | --- |
+| `--no-squash` | Keep full branch history instead of squashing to one commit |
+| `--no-archive` | Don't preserve the branch under `refs/baton/archive/` |
+
+### `baton rm <slug>`
+Remove a task's worktree + branch.
+
+| Flag | Description |
+| --- | --- |
+| `-f, --force` | Remove even with uncommitted changes |
+
+### `baton path <slug>`
+Print a task's worktree path (handy for `cd "$(baton path <slug>)"`).
+
+## Cleanup
+
+### `baton doctor`
+Audit junk: orphaned worktrees, branches, ghost tmux sessions, and leaked temp files.
+Read-only — it only reports.
+
+### `baton clean`
+Reclaim what `baton doctor` found. **Dry-run by default.**
+
+| Flag | Description |
+| --- | --- |
+| `--fix` | Actually delete the audited junk |
+| `-f, --force` | Also remove worktrees with uncommitted changes |
+
+<Callout type="info">
+  See [Keep your repo clean](/docs/keep-your-repo-clean) for the full cleanup workflow.
+</Callout>
+
+## Agents
+
+### `baton start <slug>`
+Run an agent headlessly in a task's worktree, streaming its output.
+
+| Flag | Description |
+| --- | --- |
+| `--agent <agent>` | `claude` \| `codex` \| `gemini` (default `claude`) |
+| `--model <model>` | Model override passed to the CLI (e.g. `opus`, `sonnet`, `gemini-2.5-pro`) |
+| `--prompt <text>` | Override the prompt (default: the `HANDOFF.md` brief, else the task text) |
+
+### `baton stop <slug>`
+Stop a Baton-started headless agent.
+
+### `baton route "<task>"`
+Show which agent/model should take a task — deterministic, no LLM call. See
+[Model routing](/docs/guides/model-routing).
+
+## Handoff
+
+### `baton pass [slug]`
+Package the current session into a `HANDOFF.md` brief for another agent. Defaults to the
+worktree you're in.
+
+| Flag | Description |
+| --- | --- |
+| `--to <agent>` | Receiving agent (`cursor` \| `codex` \| `gemini` \| `any`); omit to auto-route |
+| `--model <model>` | Model for the receiving CLI (advisory, recorded in the brief) |
+| `--note <text>` | Extra context for the receiving agent |
+| `--from <agent>` | Handing-off agent (default `claude`) |
+| `--no-commit-pending` | Skip the checkpoint commit of uncommitted changes |
+| `--auto` | Quiet hook mode (no-op outside a worktree, skip if a fresh brief exists) |
+
+### `baton take [slug]`
+Pick up a `HANDOFF.md` brief: prints the execution prompt, marks it in-progress.
+
+### `baton done [slug]`
+Mark a handoff brief as done.
+
+## Knowledge base
+
+### `baton kb init [path]`
+Build knowledge graphs (one per sub-project + a merged graph), install git hooks, and write
+MCP config.
+
+| Flag | Description |
+| --- | --- |
+| `--no-mcp` | Skip writing graphify MCP servers to `.mcp.json` |
+| `--no-docs` | Skip adding the coordination guide to `AGENTS.md`/`CLAUDE.md` |
+| `--share` | Commit the KB to git (a `kb/` directory) |
+| `--local` | Keep the KB local-only |
+
+### `baton kb rebuild [project]`
+Rebuild graphs (incremental by default). `--full` re-extracts from scratch.
+
+### `baton kb status`
+Show projects, node/edge counts, and last build time.
+
+### `baton kb mcp [--agent <agent>]`
+Print MCP config so an agent can query the graph. `--agent`: `claude` \| `cursor` \| `codex` \| `gemini`.
+
+### `baton kb export` / `import` / `share`
+Share a knowledge base across machines or teammates.
+
+| Command | Description |
+| --- | --- |
+| `baton kb export [--out <file>]` | Export the KB as a `.tar.gz` pack |
+| `baton kb import <source> [--no-rebuild]` | Adopt an exported pack or committed `kb/` dir (re-anchored, staleness-checked) |
+| `baton kb share [on\|off]` | Toggle git-sharing of the KB via a committed `kb/` directory |
+
+## Memory
+
+### `baton memory list`
+List all facts with freshness: ● fresh · ◐ aging · ○ stale.
+
+### `baton memory add "<fact>"`
+Save a fact (1–3 sentences: why + how to apply).
+
+| Flag | Description |
+| --- | --- |
+| `--type <type>` | `decision` \| `gotcha` \| `convention` \| `reference` \| `preference` |
+| `--files <paths>` | Comma-separated repo-relative paths (evidence anchors) |
+| `--task <slug>` | Task slug for attribution |
+
+### `baton memory rm <id>` / `baton memory gc`
+Remove one fact, or drop all stale facts (whose anchored files changed). See
+[Project memory](/docs/guides/project-memory).
+
+## Daemon & inspection
+
+### `baton serve`
+Start the daemon: JSON API + the built dashboard.
+
+| Flag | Description |
+| --- | --- |
+| `-p, --port <port>` | Port (default `7077`) |
+| `--write` | Enable write actions (merge/remove) from the dashboard |
+
+### `baton usage`
+Real token usage per Claude Code session (parsed from session files; costs estimated).
+
+### `baton signals`
+Show live edit-signals — which files are being edited by which session right now.
+
+### `baton blame <file>`
+Which task/agent touched a file: live editors + merged history.
+
+### `baton history [file]`
+Trace which task/agent/commits touched a file (from the local index).
+
+## Integration
+
+### `baton mcp`
+Run Baton's coordination MCP server over stdio (tools: `check_files`, `get_report`,
+`who_touched`, `list_tasks`, `recall_memory`, `save_memory`). Wired into your agents by
+`baton kb init`.
+
+### `baton hooks install <agent>`
+Auto-generate a handoff brief when an agent session ends (Claude Code Stop/PreCompact hooks).
+
+| Flag | Description |
+| --- | --- |
+| `--project` | Install into `.claude/settings.json` in this repo instead of `~/.claude` |

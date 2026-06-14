@@ -1,0 +1,78 @@
+---
+title: Core Concepts
+description: Worktree-per-task, the daemon + dashboard, and the realtime model.
+icon: Boxes
+---
+
+Three ideas explain almost everything Baton does.
+
+## Worktree-per-task
+
+Every task gets its **own git worktree** — a full working directory on its own branch —
+under `.baton/wt/<slug>/`, branched as `baton/<slug>`.
+
+```bash
+baton new "fix the login crash"
+# → .baton/wt/fix-the-login-crash   (branch: baton/fix-the-login-crash)
+```
+
+Why this matters:
+
+- **No checkout juggling.** Each agent works in its own directory; you never `git stash` to switch tasks.
+- **No in-session conflicts.** Two agents on two tasks edit two separate working trees.
+- **Clean merges.** When a task is done, `baton merge <slug>` squashes the branch back into your base branch (the original branch is archived under `refs/baton/archive/`).
+
+Tasks are tracked in `.baton/tasks.json` (slug, branch, worktree path, base commit). The
+whole `.baton/` directory is local and [gitignored](/docs/keep-your-repo-clean).
+
+<Callout type="info">
+  Worktrees are standard `git worktree` — nothing proprietary. Remove Baton and your repo is
+  exactly as it was.
+</Callout>
+
+## Daemon + dashboard
+
+`baton serve` starts a tiny **zero-dependency Node HTTP daemon** that also serves the
+**React dashboard** at the same port. It binds to `127.0.0.1` only — nothing is exposed to
+the network.
+
+<Tabs items={["Real mode (:7077)", "Demo mode (:5173)"]}>
+
+<Tab value="Real mode (:7077)">
+
+`baton serve --write` → **http://localhost:7077**. This is the real dashboard: it reads your
+actual tasks, worktrees, agents, memory, and git status. `--write` enables merge/remove
+actions; without it the daemon is read-only.
+
+</Tab>
+
+<Tab value="Demo mode (:5173)">
+
+`npm run dev --prefix web` → **http://localhost:5173** (Vite dev server). This defaults to
+**demo mode** — a polished "Orbit" fixture dataset so you can tour every screen without a
+running daemon or any installed agents. Demo is a showcase, not your data.
+
+</Tab>
+
+</Tabs>
+
+The dashboard screens: **Board** (task status), **Live** (agent I/O), **Activity**
+(tokens/commits), **Knowledge Graph**, **Agents** (roster + MCP connect), **Memory**, and
+**Settings**.
+
+## Realtime (SSE)
+
+The dashboard stays live over **Server-Sent Events**, not polling. `GET /api/events` pushes a
+stream of typed events — `task.created`, `file.edited`, `agent.started`, `commit.created`,
+`handoff.created`, `memory.updated`, and more.
+
+- A per-worktree filesystem watcher turns edits into `file.edited` events.
+- When two sessions touch the same path, Baton emits a `signal.overlap` warning you see on the **Conflicts** page.
+- The daemon only diffs git state while a dashboard is connected, so it stays cheap when idle.
+
+This is why the board updates the instant an agent writes a file — no refresh needed.
+
+<Cards>
+  <Card title="Model routing" href="/docs/guides/model-routing" description="Send each task to the right agent + model tier." />
+  <Card title="Project memory" href="/docs/guides/project-memory" description="Shared, evidence-checked facts across sessions." />
+</Cards>

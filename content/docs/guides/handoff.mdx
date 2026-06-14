@@ -1,0 +1,105 @@
+---
+title: Handoff
+description: Pass a unit of work from one agent to another with a curated brief.
+icon: ArrowRightLeft
+---
+
+Handoff is Baton's core move: **plan on an expensive agent, then pass the baton to a cheaper
+one** — without losing context. Instead of dumping raw history, `baton pass` writes a curated
+`HANDOFF.md` brief with a token/cost estimate.
+
+## The flow
+
+<Steps>
+
+<Step>
+### Package the session
+
+From inside a task's worktree (or with an explicit slug):
+
+```bash
+baton pass fix-login --to cursor
+```
+
+This commits any pending work (a checkpoint commit), then writes `HANDOFF.md` into the
+worktree with the objective, where to work, git state, the extracted plan, relevant code
+excerpts from the knowledge graph, and recalled project memory.
+</Step>
+
+<Step>
+### Pick it up
+
+In the receiving agent, run:
+
+```bash
+baton take fix-login
+```
+
+It prints the execution prompt to paste into the agent and marks the brief `in-progress`.
+</Step>
+
+<Step>
+### Mark it done
+
+```bash
+baton done fix-login
+```
+
+</Step>
+
+</Steps>
+
+## What's in a HANDOFF.md
+
+The brief is front-matter + markdown:
+
+```yaml
+---
+baton: 1
+from: claude
+to: cursor
+model: sonnet          # advisory
+status: ready          # ready | in-progress | done
+created: 2026-06-14T…
+branch: baton/fix-login
+est_tokens: 48200
+est_cost_usd: 0.14
+---
+
+# Handoff: fix the login crash
+## Objective …
+## Where to work …
+## State of the work …   (committed vs base, uncommitted)
+## Plan …                (open / done items)
+## Code excerpts …       (graph nodes, if the KB exists)
+## Project memory …      (recalled facts)
+## Do NOT …              (files another task is editing)
+```
+
+The `est_tokens` / `est_cost_usd` fields come from parsing the source session — they tell you
+roughly what it would cost to replay that context on a metered API, so you can decide which
+agent should pick it up.
+
+## Auto-routing
+
+Omit `--to` and Baton picks the target from your rules + severity:
+
+```bash
+baton pass fix-login        # routed by baton.config.json + severity
+```
+
+See [Model routing](/docs/guides/model-routing) for how the target is chosen.
+
+## Automate it
+
+Install Claude Code hooks so a brief is generated automatically when a session ends or
+compacts:
+
+```bash
+baton hooks install claude
+```
+
+<Callout type="info">
+  Hooks run `baton pass --auto`, which is a quiet no-op outside a worktree and skips writing
+  if a fresh brief already exists.
+</Callout>

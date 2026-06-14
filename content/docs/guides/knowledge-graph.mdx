@@ -1,0 +1,59 @@
+---
+title: Knowledge Graph
+description: A queryable code graph + a token-cheap map so agents orient without scanning.
+icon: Network
+---
+
+Baton indexes your repo into a **knowledge graph** (via the external `graphify` CLI) and a
+deterministic **`CODEBASE.md`** map, so agents navigate the code with targeted queries instead
+of broad, expensive file scans.
+
+## Initialize
+
+```bash
+baton kb init
+```
+
+This:
+
+- detects sub-projects (each gets its own graph) plus a merged cross-project graph,
+- installs a git hook that **rebuilds incrementally on commit**,
+- generates a `CODEBASE.md` map per project, and
+- writes MCP config so agents can query the graph.
+
+```bash
+baton kb status      # projects, node/edge counts, last build
+baton kb rebuild     # incremental; --full to re-extract
+```
+
+## CODEBASE.md — the token-cheap map
+
+`baton kb init` / `rebuild` generates a **`CODEBASE.md`** (under ~2k tokens) per project:
+stack, file tree, the highest-centrality symbols, and pointers for querying the graph. It
+carries a staleness footer tied to the graph's commit.
+
+Agents are told to **read `CODEBASE.md` first** — orienting from a 2k-token map is dramatically
+cheaper than re-reading the whole repo every session. `CODEBASE.md` is meant to be
+[committed](/docs/keep-your-repo-clean).
+
+## Agents query it
+
+The generated `graphify-*` MCP servers expose:
+
+- `query_graph(query)` — search the graph (symbols, files, relationships)
+- `get_node(id)` — details on one node, with source locations
+
+## Share it
+
+Avoid re-indexing on every clone:
+
+```bash
+baton kb export                 # → a .tar.gz pack
+baton kb import <pack|kb/>       # re-anchored, staleness-checked
+baton kb share on                # commit a kb/ dir so teammates clone-and-go
+```
+
+<Callout type="info">
+  Generated graph output (`graphify-out/`) is gitignored. The committed `kb/` share directory
+  (when you opt in) is the portable copy.
+</Callout>

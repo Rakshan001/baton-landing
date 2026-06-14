@@ -1,0 +1,11 @@
+{
+  "title": "Guides",
+  "icon": "BookOpen",
+  "pages": [
+    "handoff",
+    "model-routing",
+    "mcp-and-agents",
+    "project-memory",
+    "knowledge-graph"
+  ]
+}

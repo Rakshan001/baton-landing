@@ -1,0 +1,82 @@
+---
+title: MCP & Agents
+description: Onboard your agents — see who's installed and live, and wire MCP one-by-one.
+icon: Plug
+---
+
+The dashboard's **Agents** page is the roster of every agent Baton knows: whether each CLI is
+**installed**, whether it can run **headless/interactive**, whether its **MCP is wired**, and
+what it's doing **right now**.
+
+## The roster
+
+`GET /api/agents` reports, per agent:
+
+- **installed** — is the binary on the daemon's PATH (e.g. `claude`, `cursor-agent`, `codex`, `gemini`, `aider`, `opencode`)
+- **headless / interactive** — which run modes Baton can drive
+- **mcp** — is MCP wired, in which config file, and is it connected
+- **live** — sessions running right now (process / headless / terminal)
+
+<Callout type="info">
+  Install detection uses the **daemon's** PATH. If an agent shows "not installed" but you have
+  it, start `baton serve` from a terminal where that CLI is on PATH.
+</Callout>
+
+## Connect MCP per agent
+
+Click **Connect MCP** on an agent card, or run `baton kb mcp --agent <agent>` to print the
+snippet. Baton wires two kinds of MCP server: the **graphify** servers (query the knowledge
+graph) and the **baton** coordination server.
+
+<Tabs items={["Claude & Cursor (project)", "Codex & Gemini (global)", "Aider / OpenCode"]}>
+
+<Tab value="Claude & Cursor (project)">
+
+Project-scoped config — Baton **writes it automatically** (it's in your repo, safe and
+non-destructive; it merges into any existing `mcpServers`):
+
+- Claude Code → `.mcp.json`
+- Cursor → `.cursor/mcp.json`
+
+</Tab>
+
+<Tab value="Codex & Gemini (global)">
+
+Global config in your home directory — Baton shows a **preview and asks before writing**
+(needs an explicit confirm):
+
+- Codex → `~/.codex/config.toml`
+- Gemini → `~/.gemini/settings.json`
+
+</Tab>
+
+<Tab value="Aider / OpenCode">
+
+No standard MCP config — surfaced as **"MCP n/a"**. You can still launch them as agents and
+hand work to them.
+
+</Tab>
+
+</Tabs>
+
+<Callout type="warn" title="Baton never clobbers a config it can't parse">
+  If a config file already exists but isn't valid JSON, Connect refuses and asks you to fix it
+  first — it will not overwrite a file it can't safely round-trip.
+</Callout>
+
+## Coordination tools agents get
+
+Once connected, agents can call the **baton** MCP server:
+
+| Tool | What it answers |
+| --- | --- |
+| `check_files` | Is a file being edited by another session right now? |
+| `who_touched` | Which task/agent last edited a file? |
+| `get_report` | Was this task already finished (and how)? |
+| `list_tasks` | What tasks exist, and their status? |
+| `recall_memory` | What relevant, evidence-checked facts do we already know? |
+| `save_memory` | Record a fact for the next session. |
+
+…plus the **graphify** servers' `query_graph` and `get_node` for navigating the codebase
+without broad file scans. See [Project memory](/docs/guides/project-memory) and
+[Knowledge graph](/docs/guides/knowledge-graph).

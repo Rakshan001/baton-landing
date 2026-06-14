@@ -1,0 +1,84 @@
+---
+title: Keep Your Repo Clean
+description: What to gitignore so agent worktrees and daemon state never get committed.
+icon: Sparkles
+---
+
+Baton writes a few things into your repo. Most of it is **local runtime state** that should
+never be committed — especially the task **worktrees** under `.baton/`, which are full working
+copies of your repo. This page tells you exactly what to ignore and what to keep.
+
+## The .gitignore block
+
+Paste this into your repo's `.gitignore`:
+
+```bash title=".gitignore"
+# Baton — local runtime state (worktrees, tasks, history, memory, reports, temp)
+.baton/
+
+# Generated knowledge graphs (rebuild with `baton kb init`)
+graphify-out/
+
+# Machine-specific MCP config (absolute paths; regenerate with `baton kb init`)
+.mcp.json
+
+# Recommended: Cursor's per-machine MCP config
+.cursor/mcp.json
+```
+
+<Callout type="warn" title="Always ignore .baton/">
+  `.baton/wt/` contains a **git worktree per task** — a full checkout of your repo. Committing
+  it would add thousands of duplicate files. `.baton/` must always be gitignored.
+</Callout>
+
+## What's committed vs ignored
+
+<Tabs items={["Gitignored (local)", "Committed (shared)"]}>
+
+<Tab value="Gitignored (local)">
+
+| Artifact | Path | Why |
+| --- | --- | --- |
+| Task worktrees | `.baton/wt/<slug>/` | Full per-task checkouts — local only |
+| Task registry | `.baton/tasks.json` | Machine-specific daemon state |
+| History DB | `.baton/history.db` | Local SQLite history |
+| Project memory | `.baton/memory/facts/` | Shared per-machine, not per-clone |
+| Merge reports | `.baton/reports/` | Local completion reports |
+| Temp files | `.baton/tmp/` | Transient |
+| Handoff briefs | `.baton/wt/<slug>/HANDOFF.md` | Inside the worktree |
+| Graphify output | `graphify-out/` | Generated; rebuild with `baton kb rebuild` |
+| MCP config | `.mcp.json`, `.cursor/mcp.json` | Contain machine-specific absolute paths |
+
+</Tab>
+
+<Tab value="Committed (shared)">
+
+| Artifact | Why commit it |
+| --- | --- |
+| `CODEBASE.md` | The token-cheap map; teammates skip re-indexing |
+| `baton.config.json` | Routing rules — team-shared, deterministic |
+| `AGENTS.md` | Coordination guide for agents (Baton appends a section) |
+| `.graphifyignore` | Tells graphify what to skip |
+| `kb/` *(if `baton kb share on`)* | The portable knowledge base so others clone-and-go |
+
+</Tab>
+
+</Tabs>
+
+## Reclaim junk you already have
+
+If worktrees, branches, tmux sessions, or temp files pile up (interrupted runs, manual
+deletes), audit and reclaim them:
+
+```bash
+baton doctor              # read-only: lists orphaned worktrees, branches, tmux, temp files
+baton clean               # dry-run: shows what WOULD be removed
+baton clean --fix         # actually reclaim it
+baton clean --fix --force # also remove worktrees with uncommitted changes
+```
+
+<Callout title="Safe by default">
+  `baton clean` is a **dry-run** until you add `--fix`, and it **never** deletes a worktree with
+  uncommitted changes unless you add `--force`. The daemon also sweeps only provably-dead temp
+  files on startup — never your worktrees.
+</Callout>

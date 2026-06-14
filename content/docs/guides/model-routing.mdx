@@ -1,0 +1,86 @@
+---
+title: Model Routing
+description: Send each task to the right agent and model tier — deterministic, no LLM call.
+icon: Route
+---
+
+Baton routes each task to the cheapest agent + model that can handle it: heavy reasoning to
+Opus/Claude, UI to Gemini, small fixes to Codex/Cursor, trivial fixes to a local model. The
+routing is **deterministic keyword + severity scoring** — no LLM call, instant, and every
+decision shows its reasoning.
+
+## Configure it
+
+Routing lives in a committed, team-shared `baton.config.json` at the repo root:
+
+```json
+{
+  "routing": {
+    "mode": "auto",
+    "rules": [
+      { "match": ["plan", "architecture"], "tier": "heavy" },
+      { "match": ["ui", "css", "component"], "agent": "gemini" },
+      { "match": ["bug", "crash", "fix"], "tier": "light" }
+    ],
+    "default": "standard",
+    "tiers": {
+      "heavy":    [{ "agent": "claude", "model": "opus" }],
+      "standard": [{ "agent": "cursor" }, { "agent": "claude", "model": "sonnet" }],
+      "light":    [{ "agent": "codex" }, { "agent": "gemini" }],
+      "local":    [{ "agent": "aider", "model": "ollama/qwen2.5-coder" }, { "agent": "opencode" }]
+    }
+  }
+}
+```
+
+## Modes
+
+<Tabs items={["auto", "manual", "single"]}>
+
+<Tab value="auto">
+**Default.** Keyword rules first; if nothing matches, a severity score picks a tier.
+</Tab>
+
+<Tab value="manual">
+Suggestions are advisory only — the UI never preselects an agent. You always choose.
+</Tab>
+
+<Tab value="single">
+Everything goes to one agent/model. For people who use a single CLI and just want Baton's
+coordination.
+</Tab>
+
+</Tabs>
+
+## Severity & tiers
+
+When no rule matches, Baton scores the task **0–100** from deterministic hints:
+
+- **Heavier** (+): `architecture`, `refactor`, `migrate`, `security`, `concurrency`, `performance`, `research`, plus a long, detailed description.
+- **Lighter** (−): `typo`, `rename`, `comment`, `bump`, `lint`, `minor`, `quick`, plus a very short description.
+
+The score maps onto a **tier**, and each tier is an **ordered fallback chain** — the first
+*installed* agent in the chain wins, so a missing CLI (e.g. Ollama down) falls through to the
+next entry automatically.
+
+| Tier | Typical use | Example chain |
+| --- | --- | --- |
+| `heavy` | Architecture, security, hard bugs | `claude:opus` |
+| `standard` | Most feature work | `cursor` → `claude:sonnet` |
+| `light` | Small fixes | `codex` → `gemini` |
+| `local` | Trivial edits | `aider:ollama/qwen2.5-coder` → `opencode` |
+
+## Preview a route
+
+```bash
+baton route "refactor the auth module for concurrency"
+# → claude (opus)   severity 88/100 → heavy tier
+```
+
+Routing is also applied automatically by `baton pass` when you omit `--to`, and surfaced in the
+dashboard's Launch and Handoff dialogs with the matched keywords and confidence shown.
+
+<Callout title="Always a suggestion, never a surprise">
+  Every routing decision is explainable and overridable. Baton never auto-escalates to a more
+  expensive model behind your back.
+</Callout>

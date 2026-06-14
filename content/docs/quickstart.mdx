@@ -1,0 +1,118 @@
+---
+title: Quickstart
+description: Install Baton from source, build it, and run the daemon + dashboard.
+icon: Rocket
+---
+
+This gets you from zero to a running dashboard with one task in a worktree.
+
+<Callout type="warn" title="npm install coming soon">
+  `npm i -g baton` is **not published yet**. For now, install from source with the steps
+  below. The published package will land in a future release.
+</Callout>
+
+## Prerequisites
+
+- **Node.js ≥ 20** and **git**
+- **[uv](https://docs.astral.sh/uv/)** — to install the `graphify` CLI (the knowledge-graph indexer)
+- **tmux** *(optional)* — only needed for interactive agent terminals in the dashboard
+- At least one agent CLI on your PATH: `claude`, `cursor-agent`, `codex`, `gemini`, `aider`, or `opencode`
+
+## Install from source
+
+<Steps>
+
+<Step>
+### Clone and enter the repo
+
+<CopyChip text="git clone https://github.com/Rakshan001/Baton-Multi-Agent-.git baton && cd baton" label="git clone …/Baton-Multi-Agent-.git baton && cd baton" />
+</Step>
+
+<Step>
+### Install dependencies (CLI + dashboard)
+
+<CopyChip text="npm install" />
+<CopyChip text="npm install --prefix web" />
+</Step>
+
+<Step>
+### Build both workspaces
+
+<CopyChip text="npm run build" />
+<CopyChip text="npm run build --prefix web" />
+</Step>
+
+<Step>
+### Install the graphify CLI
+
+This powers the knowledge graph. Skip only if you don't want code-graph features.
+
+<CopyChip text="uv tool install graphifyy" />
+</Step>
+
+<Step>
+### Put `baton` on your PATH
+
+<CopyChip text="npm link" />
+
+Now `baton --help` works from any repo.
+</Step>
+
+</Steps>
+
+## First run
+
+<Steps>
+
+<Step>
+### Initialize the knowledge base
+
+Run this inside the repo you want to coordinate. It indexes the code, installs a git hook,
+and generates MCP config so your agents can query the graph.
+
+<CopyChip text="baton kb init" />
+</Step>
+
+<Step>
+### Start the daemon + dashboard
+
+<CopyChip text="baton serve --write" />
+
+Open **http://localhost:7077**. The `--write` flag enables merge/remove actions from the
+dashboard; omit it for a read-only view.
+</Step>
+
+<Step>
+### Create your first task
+
+<CopyChip text='baton new "try the dashboard"' />
+
+This scaffolds an isolated worktree at `.baton/wt/try-the-dashboard` on branch
+`baton/try-the-dashboard`. Launch an agent in it from the dashboard, or with
+`baton start try-the-dashboard`.
+</Step>
+
+</Steps>
+
+<Callout type="info" title="Demo vs real">
+  The dashboard you just opened on `:7077` shows **real data** from your repo. If you run the
+  Vite dev server (`npm run dev --prefix web`) on `:5173`, that defaults to **demo mode** with
+  showcase fixtures — handy for a tour without a daemon. See [Concepts](/docs/concepts#daemon--dashboard).
+</Callout>
+
+## Wire up your agents (optional)
+
+Give your agents access to Baton's coordination tools and the knowledge graph:
+
+<CopyChip text="baton kb mcp --agent cursor" label="baton kb mcp --agent cursor   # prints config" />
+
+Or connect them one-by-one from the dashboard's **Agents** page. See
+[MCP & Agents](/docs/guides/mcp-and-agents).
+
+## Next
+
+<Cards>
+  <Card title="Core concepts" href="/docs/concepts" description="How worktrees and the daemon fit together." />
+  <Card title="CLI reference" href="/docs/cli-reference" description="Every command and flag." />
+  <Card title="Keep your repo clean" href="/docs/keep-your-repo-clean" description="The .gitignore you need." />
+</Cards>
