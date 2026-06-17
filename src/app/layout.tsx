@@ -74,11 +74,10 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
         />
-        {/* Docs stay on-brand dark; the theme toggle is disabled. Lenis + grain
-            live in the (marketing) layout, not here. */}
-        <RootProvider
-          theme={{ enabled: false, defaultTheme: "dark", forcedTheme: "dark" }}
-        >
+        {/* Docs support a light/dark toggle (brand-mapped in globals.css).
+            Marketing stays dark via the `.marketing` wrapper regardless of the
+            chosen theme. Lenis + grain live in the (marketing) layout. */}
+        <RootProvider theme={{ enabled: true, defaultTheme: "dark" }}>
           {children}
         </RootProvider>
       </body>

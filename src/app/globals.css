@@ -25,19 +25,30 @@
   --mono:var(--font-mono),'JetBrains Mono',ui-monospace,monospace;
   --display:var(--font-display),'Space Grotesk',system-ui,sans-serif;
 }
-*{margin:0;padding:0;box-sizing:border-box;}
+*{box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:var(--display);
+  /* Themed: follows the fd tokens so light-mode docs get a light canvas
+     (marketing re-forces dark on its own wrapper below). */
+  background:var(--color-fd-background);
+  color:var(--color-fd-foreground);
   -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
 }
-/* Marketing-only base typography (kept off /docs, which Fumadocs styles). */
+/* The zero-reset and display body font are MARKETING-ONLY. They must never be
+   unlayered+global: Tailwind/Fumadocs put padding (.px-4) and prose margins in
+   @layer utilities, and an unlayered `* { padding:0 }` / `body { font-family }`
+   beats every layer — which flattened all padding/spacing/fonts on /docs. */
+.marketing *{margin:0;padding:0;}
+/* Marketing-only base typography (kept off /docs, which Fumadocs styles).
+   Marketing is ALWAYS dark — it re-asserts the dark canvas so a light docs
+   theme never bleeds onto the landing page. */
 .marketing{
   font-size:17px;
   line-height:1.6;
+  font-family:var(--display);
+  background:var(--bg);
+  color:var(--text);
 }
 /* Decorative dot-grid — marketing pages only (do not paint over the docs). */
 .marketing::before{
@@ -93,19 +104,28 @@ code,pre,.mono{font-family:var(--mono);}
   border-color:var(--border2);color:var(--text);background:rgba(255,255,255,.02);
 }
 .btn-ghost:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.05);}
+/* Themed via fd tokens so the chip adapts in light-mode docs (and stays dark on
+   marketing, which pins the dark palette). */
 .copy-chip{
   display:inline-flex;align-items:center;gap:10px;
-  font-family:var(--mono);font-size:13px;color:var(--dim);
-  background:var(--panel);border:1px solid var(--border);border-radius:8px;
-  padding:9px 14px;transition:border-color .25s,color .25s;
+  font-family:var(--mono);font-size:13px;color:var(--color-fd-muted-foreground);
+  background:var(--color-fd-secondary);border:1px solid var(--color-fd-border);border-radius:8px;
+  padding:9px 14px;transition:border-color .25s,color .25s,background .25s;
 }
-.copy-chip:hover{border-color:var(--border2);color:var(--text);}
-.copy-chip .chip-dollar{color:var(--faint);}
+.copy-chip:hover{border-color:color-mix(in oklab,var(--color-fd-primary) 50%,var(--color-fd-border));}
+.copy-chip .chip-dollar{color:var(--color-fd-primary);opacity:.85;}
+.copy-chip .chip-text{color:var(--color-fd-foreground);}
 .copy-chip .chip-copy{
-  font-size:11px;color:var(--faint);border-left:1px solid var(--border);
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;color:var(--color-fd-muted-foreground);border-left:1px solid var(--color-fd-border);
   padding-left:10px;letter-spacing:.05em;text-transform:uppercase;
 }
-.copy-chip:hover .chip-copy{color:var(--accent);}
+.copy-chip .chip-copy svg{width:13px;height:13px;}
+.copy-chip:hover .chip-copy{color:var(--color-fd-primary);}
+/* Copied → green check + "Copied!" (overrides hover so it stays green). */
+.copy-chip[data-copied]{border-color:color-mix(in oklab,var(--copy-ok) 55%,var(--color-fd-border));}
+.copy-chip[data-copied] .chip-copy,
+.copy-chip[data-copied]:hover .chip-copy{color:var(--copy-ok);}
 
 /* ---------- nav ---------- */
 .nav{
@@ -504,8 +524,35 @@ code,pre,.mono{font-family:var(--mono);}
    Fumadocs docs theme — map fd tokens to the Baton brand.
    Loaded AFTER fumadocs preset so these win the cascade.
    ============================================================ */
-:root,
-.dark {
+/* Light (default). `--color-fd-primary` is darkened to an accessible amber so
+   links + active items keep ~5:1 contrast on the light canvas (the bright
+   brand #FFA028 fails contrast on white; it stays the ring/accent hue). */
+:root {
+  color-scheme: light;
+  --color-fd-background: #FBFBFA;
+  --color-fd-foreground: #1A1A1C;
+  --color-fd-muted: #F1F1EF;
+  --color-fd-muted-foreground: #5C5C63;
+  --color-fd-card: #FFFFFF;
+  --color-fd-card-foreground: #1A1A1C;
+  --color-fd-popover: #FFFFFF;
+  --color-fd-popover-foreground: #1A1A1C;
+  --color-fd-border: rgba(0, 0, 0, 0.10);
+  --color-fd-primary: #B45309;
+  --color-fd-primary-foreground: #FFFFFF;
+  --color-fd-secondary: #F1F1EF;
+  --color-fd-secondary-foreground: #1A1A1C;
+  --color-fd-accent: rgba(180, 83, 9, 0.10);
+  --color-fd-accent-foreground: #B45309;
+  --color-fd-ring: #FFA028;
+  --copy-ok: #1A7F37;
+}
+/* Dark — the brand default. `.marketing` is pinned to this palette so shared
+   components (e.g. CopyChip) stay dark on the landing page no matter what
+   theme the docs are toggled to. */
+.dark,
+.marketing {
+  color-scheme: dark;
   --color-fd-background: #0A0A0B;
   --color-fd-foreground: #F4F4F2;
   --color-fd-muted: #0E0E10;
@@ -522,13 +569,19 @@ code,pre,.mono{font-family:var(--mono);}
   --color-fd-accent: rgba(255, 160, 40, 0.12);
   --color-fd-accent-foreground: #FFA028;
   --color-fd-ring: #FFA028;
+  --copy-ok: #3FB950;
 }
 
-/* Brand fonts inside the docs */
+/* Docs typography — industry-standard split: a neutral, readable sans for body
+   and UI; the Space Grotesk display font reserved for headings + the wordmark.
+   (Using the display font for body copy is what made the docs read as
+   "unstyled" — it's a headline face, not a reading face.) */
 #nd-docs-layout,
 #nd-page,
 .prose {
-  --fd-font-sans: var(--font-display), system-ui, sans-serif;
+  --fd-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  font-family: var(--fd-font-sans);
 }
 #nd-docs-layout code,
 #nd-page code,
@@ -536,12 +589,15 @@ code,pre,.mono{font-family:var(--mono);}
 .prose pre {
   font-family: var(--font-mono), ui-monospace, monospace;
 }
+/* Headings + sidebar/TOC labels keep the brand display font. */
 #nd-page h1,
 #nd-page h2,
 #nd-page h3,
+#nd-page h4,
 .prose h1,
 .prose h2,
-.prose h3 {
+.prose h3,
+.prose h4 {
   font-family: var(--font-display), system-ui, sans-serif;
   letter-spacing: -0.02em;
 }
@@ -554,7 +610,7 @@ code,pre,.mono{font-family:var(--mono);}
   font-family: var(--font-display), system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: var(--text);
+  color: var(--color-fd-foreground);
 }
 .docs-glyph {
   width: 12px;
@@ -563,4 +619,41 @@ code,pre,.mono{font-family:var(--mono);}
   background: var(--accent);
   transform: rotate(-20deg);
   box-shadow: 0 0 12px rgba(255, 160, 40, 0.5);
+}
+
+/* ============================================================
+   Docs UI polish — links, inline code, code-block copy button.
+   All theme-aware via fd tokens.
+   ============================================================ */
+
+/* Prose links: brand-tinted with a soft underline that fills in on hover. */
+#nd-page .prose a {
+  color: var(--color-fd-primary);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklab, var(--color-fd-primary) 38%, transparent);
+  transition: text-decoration-color 0.2s, color 0.2s;
+}
+#nd-page .prose a:hover {
+  text-decoration-color: var(--color-fd-primary);
+}
+
+/* Inline code (not the code-block contents): a subtle bordered chip. */
+#nd-page .prose :not(pre) > code {
+  background: var(--color-fd-muted);
+  border: 1px solid var(--color-fd-border);
+  border-radius: 5px;
+  padding: 0.12em 0.38em;
+  font-size: 0.86em;
+  font-weight: 500;
+  color: var(--color-fd-foreground);
+}
+
+/* Code-block copy button → green check on copy. Fumadocs toggles the button to
+   a checked state on copy; tint that state (and its check icon) green. */
+#nd-page figure button[data-copied="true"],
+#nd-page figure button[aria-label*="opied" i] {
+  color: var(--copy-ok) !important;
+  border-color: color-mix(in oklab, var(--copy-ok) 55%, var(--color-fd-border)) !important;
 }

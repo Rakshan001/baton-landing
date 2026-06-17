@@ -1,7 +1,36 @@
 "use client";
 
-import { CSSProperties, ReactNode, useState } from "react";
+import { CSSProperties, ReactNode, useEffect, useRef, useState } from "react";
 import { useInView } from "@/lib/hooks";
+
+/**
+ * Copy text to the clipboard, returning whether it succeeded. Falls back to a
+ * hidden-textarea + execCommand path for insecure contexts (http on a LAN IP)
+ * and older browsers where navigator.clipboard is unavailable.
+ */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* fall through to the legacy path */
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;pointer-events:none";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
 
 /** Fade + translateY reveal on scroll. Ported from baton-shared.jsx. */
 export function Reveal({
@@ -42,20 +71,40 @@ export function Eyebrow({ children }: { children: ReactNode }) {
 /** Click-to-copy install chip. Ported from baton-shared.jsx. */
 export function CopyChip({ text, label }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear a pending reset on unmount so we never setState on a gone component.
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  const onCopy = async () => {
+    const ok = await copyText(text);
+    if (!ok) return; // copy failed → don't show a false "Copied!"
+    setCopied(true);
+    if (timer.current) clearTimeout(timer.current); // debounce rapid clicks
+    timer.current = setTimeout(() => setCopied(false), 1600);
+  };
+
   return (
     <button
       className="copy-chip"
       type="button"
-      aria-label={`Copy command: ${text}`}
-      onClick={() => {
-        navigator.clipboard?.writeText(text).catch(() => {});
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1400);
-      }}
+      data-copied={copied || undefined}
+      aria-label={copied ? "Copied to clipboard" : `Copy command: ${text}`}
+      onClick={onCopy}
     >
       <span className="chip-dollar">$</span>
-      <span>{label || text}</span>
-      <span className="chip-copy">{copied ? "copied" : "copy"}</span>
+      <span className="chip-text">{label || text}</span>
+      <span className="chip-copy" aria-live="polite">
+        {copied ? (
+          <>
+            <CheckIcon size={13} strokeWidth={2.6} /> Copied!
+          </>
+        ) : (
+          "copy"
+        )}
+      </span>
     </button>
   );
 }
@@ -76,7 +125,15 @@ export function StarIcon({ size = 14 }: { size?: number }) {
   );
 }
 
-export function CheckIcon({ size = 36, color = "currentColor" }: { size?: number; color?: string }) {
+export function CheckIcon({
+  size = 36,
+  color = "currentColor",
+  strokeWidth = 2.2,
+}: {
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+}) {
   return (
     <svg
       width={size}
@@ -84,7 +141,7 @@ export function CheckIcon({ size = 36, color = "currentColor" }: { size?: number
       viewBox="0 0 24 24"
       fill="none"
       stroke={color}
-      strokeWidth="2.2"
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
