@@ -2,10 +2,12 @@
   "title": "Guides",
   "icon": "BookOpen",
   "pages": [
-    "handoff",
-    "model-routing",
+    "setup",
+    "knowledge-graph",
     "mcp-and-agents",
+    "skills",
     "project-memory",
-    "knowledge-graph"
+    "handoff",
+    "model-routing"
   ]
 }

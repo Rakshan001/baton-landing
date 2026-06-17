@@ -42,6 +42,20 @@ baton memory add "Auth tokens are refreshed in middleware, not the route handler
 baton memory gc      # drop stale facts
 ```
 
+## Manage it from the dashboard
+
+The **Memory** page keeps facts from piling up or wasting disk:
+
+- **Filter** by freshness, agent, or **server** — in a [multi-repo hub](/docs/guides/setup),
+  each fact is scoped to the sub-project its anchored files live in, so the api / admin / driver
+  memories don't blur together.
+- **Bulk select + delete** instead of one-by-one.
+- **Storage view** — a disk-footprint breakdown across memory, the knowledge graphs, reports,
+  and `history.db` (the one append-only store), so you can see what's actually growing.
+- **Auto-retention** — an optional policy (drop facts older than _N_ days, or drop `stale` /
+  `aging` facts) applied on every daemon start and the moment you save it. Set it once and memory
+  self-maintains.
+
 ## Guardrails
 
 - **Secrets are refused.** Anything that looks like an API key, token, or JWT is rejected — memory files are read by every agent.

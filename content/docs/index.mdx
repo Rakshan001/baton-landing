@@ -25,11 +25,13 @@ Developers run two or three AI CLIs to save money and quota. The problem is coor
 - You lose context when a session ends or a model hits its limit.
 - The expensive model re-explores the codebase every session because nothing is remembered.
 
-Baton fixes this with four ideas, all local and all under your control:
+Baton fixes this with a handful of ideas, all local and all under your control:
 
 - **Worktree-per-task** — every task is an isolated branch + working directory. No checkout juggling, no in-session conflicts.
+- **A queryable knowledge base** — your repo (or a whole multi-repo hub) indexed into a graph + a ~2k-token `CODEBASE.md` map, so agents navigate with targeted queries instead of re-reading the repo every session (~300× cheaper).
 - **Live coordination** — a daemon streams edit-signals over SSE; the dashboard shows live agents, conflicts, and progress.
 - **Shared, evidence-checked memory** — agents save and recall facts; stale facts (whose files changed) are withheld so models don't hallucinate.
+- **Installable skills** — reusable agent playbooks (like a disciplined bug-fix) installed into each agent's own config.
 - **One-file handoff** — `baton pass` packages a session into a `HANDOFF.md` brief with a token/cost estimate; another agent runs `baton take` and continues.
 
 ## What Baton is not
@@ -42,7 +44,7 @@ Baton fixes this with four ideas, all local and all under your control:
 
 <Cards>
   <Card title="Quickstart" href="/docs/quickstart" description="Install, build, and run the daemon + dashboard in a few minutes." />
+  <Card title="Setup & multi-repo hubs" href="/docs/guides/setup" description="One command to wire up a repo — or a whole project across several repos." />
   <Card title="Core concepts" href="/docs/concepts" description="Worktrees, the daemon + dashboard, and the realtime model." />
   <Card title="CLI reference" href="/docs/cli-reference" description="Every command and flag." />
-  <Card title="Keep your repo clean" href="/docs/keep-your-repo-clean" description="What to gitignore so agent worktrees never get committed." />
 </Cards>

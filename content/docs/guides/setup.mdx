@@ -1,0 +1,76 @@
+---
+title: Setup & multi-repo hubs
+description: One command to wire up a single repo — or a whole project spread across several repos.
+icon: Wrench
+---
+
+`baton setup` is the friendly front door. Point it at a folder and it figures out what you have
+and wires it up — no hand-running `git init`, `.gitignore`, and `baton kb init` yourself.
+
+```bash
+baton setup            # the current folder
+baton setup ./path     # a specific folder
+```
+
+## What it detects
+
+| Your folder | What Baton does |
+| --- | --- |
+| **A single git repo** | Sets up the knowledge base here. |
+| **A folder of ≥2 separate git repos** | Asks: one **centralized hub** or set them up **individually**. |
+| **Project files but not a git repo** | Offers to `git init`, then sets up. |
+| **Empty** | Tells you there's nothing to do. |
+
+A container is still recognised as multi-repo even if it has its own root `package.json` (shared
+workspace tooling), and re-running on an existing hub keeps offering the hub flow.
+
+## Multi-repo: hub vs individual
+
+Many projects are **one product across several repos** — a backend API plus admin, web, and
+driver front-ends. Drop them in one folder and `baton setup` offers two shapes:
+
+- **Centralized hub** *(recommended)* — `git init`s the container as a lightweight hub that only
+  hosts `.baton/` + a **merged cross-project graph**. One knowledge base, one dashboard, shared
+  memory spanning all repos. The sub-repos stay independent and untracked by the hub.
+- **Individual** — each repo gets its own Baton setup on its own port; add each as a connection
+  in one dashboard.
+
+```bash
+baton setup ./my-project --hub          # or --individual
+```
+
+The hub's merged graph is what lets an agent ask "where does the driver app call the payments
+endpoint?" across repo boundaries — without loading every repo into context.
+
+<Callout type="info">
+  Coordination (worktrees, edit-signals, task board) is per-repo, since a git worktree can't span
+  separate repos. The hub gives you a **unified knowledge base + memory**; for isolated agent work
+  inside a specific repo, run a daemon there too.
+</Callout>
+
+## Dashboard or headless
+
+After building the knowledge base, `baton setup` asks how agents will use it:
+
+- **Dashboard** — the realtime UI on `localhost` (`baton serve`). Live agents, conflicts,
+  terminals, memory, skills, the graph.
+- **Headless** — agents read the KB over MCP, no dashboard. Nothing to keep running.
+
+Either way the KB is identical; the choice is just whether you want the UI. Skip the prompt with
+flags:
+
+```bash
+baton setup --serve       # always the dashboard
+baton setup --headless    # MCP only, no dashboard
+```
+
+Other agents (Codex, Gemini, Cursor) get the graph over MCP with `baton kb mcp --agent <name>`;
+Claude Code is wired automatically via `.mcp.json`.
+
+## Next
+
+<Cards>
+  <Card title="Knowledge Graph" href="/docs/guides/knowledge-graph" description="The map + graph that setup builds." />
+  <Card title="MCP & Agents" href="/docs/guides/mcp-and-agents" description="Wire each agent to the KB." />
+  <Card title="Keep your repo clean" href="/docs/keep-your-repo-clean" description="What stays gitignored." />
+</Cards>

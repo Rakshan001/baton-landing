@@ -1,0 +1,65 @@
+---
+title: Skills
+description: A searchable catalog of reusable agent playbooks, installed into each agent's own config.
+icon: Sparkles
+---
+
+Skills are reusable, named **playbooks** — a Markdown set of instructions an agent can install
+into its own config and invoke. Instead of re-explaining "how we fix bugs here" to every agent
+every session, you install a skill once and it's there.
+
+Baton ships a curated catalog, lets you **import your own**, and installs each skill into the
+format the agent understands — so the same skill works across Claude Code and Cursor.
+
+## The catalog
+
+Open the **Skills** page in the dashboard (or `GET /api/skills`). Each skill shows what it
+produces, its reference files, and where it's installed.
+
+Bundled skills include:
+
+- **bug-fix** — the flagship, multi-file skill: reproduce first → audit every file the fix could
+  touch → classify blast radius → find the true root cause → require ≥95% skeptic-corroborated
+  confidence **and** an approved plan before editing → re-verify the symptom is gone → commit
+  automatically, but never push without asking. Ships a blast-radius checklist, a bugfix report
+  template, and a multi-session status schema.
+- **map-codebase** — build the knowledge graph + `CODEBASE.md` so agents navigate a map instead
+  of the whole repo.
+- **safe-refactor** — restructure without changing behaviour, using worktrees, a green test
+  baseline, and the graph to find every caller.
+
+## Install into an agent
+
+One click (or one request) writes the skill in the agent's own format:
+
+| Agent | Where it lands |
+| --- | --- |
+| **Claude Code** | `.claude/skills/<id>/SKILL.md` (+ a `references/` folder for multi-file skills) |
+| **Cursor** | `.cursor/rules/<id>.mdc` (with references copied to a sibling `<id>/` folder the rule points at) |
+
+```bash
+# from the dashboard's Skills page, or:
+curl -XPOST localhost:7077/api/skills/bug-fix/install -d '{"agent":"claude"}'
+```
+
+A hand-authored `SKILL.md` is written **verbatim** for Claude when its frontmatter name already
+matches; otherwise it's rendered into the right shape. Removing a skill deletes the whole skill
+folder (and Cursor's sibling references) — nothing left behind.
+
+## Bring your own
+
+Import a skill from a path or URL — it joins the catalog and installs like a bundled one:
+
+```bash
+curl -XPOST localhost:7077/api/skills/import -d '{"source":"./my-skill/SKILL.md"}'
+```
+
+Imported skills live under `.baton/skills/`. They're frontmatter-parsed (folded YAML and all),
+capped at 256 KB, and can't shadow a bundled id.
+
+<Callout type="info">
+  Skills compose with the rest of Baton: a `bug-fix` run uses the [knowledge
+  graph](/docs/guides/knowledge-graph) to find the core files, [edit
+  signals](/docs/concepts) to avoid collisions, isolated worktrees per bug, and
+  [project memory](/docs/guides/project-memory) to record what it learned.
+</Callout>

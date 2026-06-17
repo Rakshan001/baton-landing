@@ -89,6 +89,32 @@ export default function Features() {
             </div>
           </Reveal>
 
+          <Reveal className="bento-card span3" delay={150}>
+            <h3>Installable skills</h3>
+            <p>
+              A searchable catalog of agent playbooks, installed into each agent&apos;s own config — a
+              bug-fix that maps the repo, confirms the root cause to 95%, then fixes one bug at a time.
+            </p>
+            <div className="cost-chips" style={{ marginTop: "auto" }}>
+              <div className="cost-chip">.claude/skills</div>
+              <div className="cost-chip">.cursor/rules</div>
+              <div className="cost-chip hot">bug-fix</div>
+            </div>
+          </Reveal>
+
+          <Reveal className="bento-card span3" delay={210}>
+            <h3>Model routing</h3>
+            <p>
+              Route each task to the right agent by severity. Plan on your expensive model; pass the
+              baton to a cheaper one.
+            </p>
+            <div className="cost-chips" style={{ marginTop: "auto" }}>
+              <div className="cost-chip">heavy · opus</div>
+              <div className="cost-chip">standard · cursor</div>
+              <div className="cost-chip">light · codex</div>
+            </div>
+          </Reveal>
+
           <Reveal className="bento-card span6 cost-card" delay={120}>
             <CostCounter />
             <div className="cost-copy">

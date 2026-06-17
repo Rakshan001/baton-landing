@@ -6,6 +6,21 @@ icon: SquareTerminal
 
 Run `baton --help` for the live list, or `baton <command> --help` for any command.
 
+## Setup
+
+### `baton setup [path]`
+The front door: classify a folder and wire up Baton. A single repo is set up here; a folder of
+≥2 git repos asks **hub** vs **individual**; a non-git project offers `git init`. See
+[Setup & multi-repo hubs](/docs/guides/setup).
+
+| Flag | Effect |
+| --- | --- |
+| `--hub` / `--individual` | multi-repo: skip the hub-vs-individual prompt |
+| `--serve` / `--headless` | use the dashboard, or KB-only over MCP (skip the prompt) |
+| `--yes` | accept recommended defaults without prompting |
+| `--share` / `--local` | commit the KB for teammates, or keep it local |
+| `--no-mcp` / `--no-docs` | skip writing `.mcp.json` / the AGENTS.md guide |
+
 ## Tasks & worktrees
 
 ### `baton new "<task>"`
